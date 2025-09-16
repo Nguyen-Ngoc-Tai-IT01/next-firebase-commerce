@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DATABASE
 
-## Getting Started
+## Features (đặc trưng)
 
-First, run the development server:
+### Admin panel
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Managers management (admins)
+- Categories management
+- Products management
+- Coupons management
+- Users management
+- Order management
+
+### Customer
+
+- Homepage (all products pagination, categories list)
+- Category detail
+- Product detail
+- Cart
+- Payment
+- Order status
+
+## DB design
+
+### Admins (manager)
+
+```yaml
+- email: string
+- name: string
+- isActive: boolean
+- deleted_at: string
+- created_at: string
+- updated_at: string
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Categories
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```yaml
+- name: string
+- slug: string
+- description: string // html
+- images: string[] // url to storage firebase
+- deleted_at: string
+- created_at: string
+- updated_at: string
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Products
 
-## Learn More
+```yaml
+- name: string
+- slug: string
+- description: string // html
+- images: string[] // url to storage firebase
+- categories: Array<CategoriesRef>
+    | ### Categories
+        - id: string
+        - name: string
+        - slug: string
+        - description: string // html
+- properties: 
+    | ### properties
+        - name: string
+        - color: string
+        - size: string
+        - price: string
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Coupons
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```yaml
+- name: string
+- code: string 
+- expired_at: string
+- percent: number(%)
+- stripe_id: string
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Users
 
-## Deploy on Vercel
+```yaml
+- email: string 
+- google_id: string
+- facebook: string
+- firstname: string
+- lastname: string
+- avata: string // url to storage firebase
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Cart
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```yaml
+- user: UserRef
+- products: Array<ProductRef>
+```
+
+### Orders
+
+```yaml
+- user: UserRef
+- products: Array<ProductRef>
+- coupon: CouponRef 
+- total: number
+- strige_invoice_id: string
+- status: string
+```
