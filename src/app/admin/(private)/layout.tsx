@@ -4,21 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
     Boxes,
-    File,
-    Home,
-    icons,
-    LineChart,
-    ListFilter,
-    MoreHorizontal,
     Package,
     Package2,
     PanelLeft,
-    PlusCircle,
     Search,
     Settings,
-    ShoppingCart,
     Users,
-    Users2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -44,6 +35,9 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { redirect } from "next/navigation";
 
 export const ADMIN_PAGES = [
     { path: '/admin/categories', name: 'Categories', icon: <Boxes className="h-5 w-5" /> },
@@ -51,11 +45,17 @@ export const ADMIN_PAGES = [
     { path: '/admin/managers', name: 'Managers', icon: <Users className="h-5 w-5" /> }
 ]
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+
+    const session = await getServerSession(authOptions)
+
+    if(!session?.user){
+        redirect("/admin/auth")
+    }
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
             <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
