@@ -26,7 +26,7 @@
 
 ```yaml
 - email: string
-- name: string
+- password: string
 - isActive: boolean
 - deleted_at: string
 - created_at: string

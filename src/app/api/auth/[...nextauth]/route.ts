@@ -1,0 +1,43 @@
+import { findAdminByEmail } from "@/features/managers/model";
+import { ICreateAdminInput } from "@/features/managers/type";
+import { comparePassword } from "@/utils/common/password";
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+
+
+// dùng để xây dựng trang đăng nhập và kiểm tra email và password 
+
+export const adminLogin = async (email: string, password: string) => {
+    const existedAdmin = await findAdminByEmail(email)
+    // kiem tra emai
+    if (!existedAdmin) {
+        throw Error('This email is not exist!')
+    }
+
+    const isMathPassword = await comparePassword(password, existedAdmin.password)
+    // kiem tra password
+    if (!isMathPassword) {
+        throw Error('The password is wrong!')
+    }
+
+    return {
+        email: existedAdmin.email,
+        id: existedAdmin.id
+    }
+}
+export const authOptions: NextAuthOptions = {
+    providers:[
+        CredentialsProvider({
+            credentials: {},
+            async authorize(credentials, req){
+                const {email, password} = credentials as ICreateAdminInput
+                return adminLogin(email, password)
+            }
+        }) 
+    ],
+    callbacks:{}
+}
+
+const authHandler = NextAuth(authOptions)
+
+export {authHandler as GET, authHandler as POST}
