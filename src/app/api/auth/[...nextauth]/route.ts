@@ -1,4 +1,5 @@
 import { findAdminByEmail } from "@/features/managers/model";
+import { loginSchema } from "@/features/managers/rules";
 import { ICreateAdminInput } from "@/features/managers/type";
 import { comparePassword } from "@/utils/common/password";
 import NextAuth, { NextAuthOptions } from "next-auth";
@@ -31,6 +32,14 @@ export const authOptions: NextAuthOptions = {
             credentials: {},
             async authorize(credentials, req){
                 const {email, password} = credentials as ICreateAdminInput
+
+                const data = loginSchema.safeParse({email, password})
+
+                if(!data.success){  
+                    const messages = JSON.parse(data.error.message);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    throw Error(messages.map((i:any)=>i.message).join(","))
+                }
                 return adminLogin(email, password)
             }
         }) 

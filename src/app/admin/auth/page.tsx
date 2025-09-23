@@ -20,12 +20,15 @@ import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { loginSchema } from "@/features/managers/rules"
 
 export default function AdminLoginForm() {
     const router = useRouter()
 
     const form = useForm<ICreateAdminInput>({
         mode: "onBlur",
+        resolver: zodResolver(loginSchema),
         defaultValues: {
             email: "",
             password: "",
@@ -39,6 +42,7 @@ export default function AdminLoginForm() {
     } = form
 
     const onLogin = async (data: ICreateAdminInput) => {
+        console.log("🚀 ~ onLogin ~ res?.error:", data)
         try {
             const res = await signIn("credentials", {
                 email: data.email,
@@ -47,7 +51,7 @@ export default function AdminLoginForm() {
             })
             if (res?.error) {
                 console.log("🚀 ~ onLogin ~ res?.error:", res?.error)
-                toast.error("Can't login, check your email or password")
+                toast.error(`Can't login,${res.error || "check your email or password" } `)
             } else {
                 router.push("/admin/categories")
             }
@@ -69,13 +73,7 @@ export default function AdminLoginForm() {
                             <FormField
                                 control={control}
                                 name="email"
-                                rules={{
-                                    required: { value: true, message: "Email is required" },
-                                    pattern: {
-                                        value: /^\S+@\S+\.\S+$/,
-                                        message: "Email is invalid",
-                                    },// khi ko nhập cả hai trường password và email thì không thể login đc (disabled={!isValid} dưới button) 
-                                }}
+
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>
@@ -90,16 +88,7 @@ export default function AdminLoginForm() {
                             <FormField
                                 control={control}
                                 name="password"
-                                rules={{
-                                    required: {
-                                        value: true,
-                                        message: "Password is required"
-                                    },
-                                    minLength: {
-                                        value: 3,
-                                        message: "Password is short"
-                                    }
-                                }}
+
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Password</FormLabel>
