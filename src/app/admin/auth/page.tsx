@@ -51,7 +51,7 @@ export default function AdminLoginForm() {
             })
             if (res?.error) {
                 console.log("🚀 ~ onLogin ~ res?.error:", res?.error)
-                toast.error(`Can't login,${res.error || "check your email or password" } `)
+                toast.error(`Can't login,${res.error || "check your email or password"} `)
             } else {
                 router.push("/admin/categories")
             }
@@ -73,7 +73,6 @@ export default function AdminLoginForm() {
                             <FormField
                                 control={control}
                                 name="email"
-
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Email</FormLabel>
@@ -88,12 +87,16 @@ export default function AdminLoginForm() {
                             <FormField
                                 control={control}
                                 name="password"
-
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Password</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="***" {...field} />
+                                            <Input
+                                                type="password"
+                                                placeholder="***"
+                                                {...field}
+                                                autoComplete="current-password"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

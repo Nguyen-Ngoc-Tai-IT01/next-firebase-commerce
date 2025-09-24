@@ -1,14 +1,14 @@
-import { Toaster } from "sonner";
-
-import Image from "next/image";
+import { Toaster } from "sonner";;
 import Link from "next/link";
 import {
+    ArrowRightToLine,
     Boxes,
     Package,
     Package2,
     PanelLeft,
     Search,
     Settings,
+    User,
     Users,
 } from "lucide-react"
 
@@ -38,6 +38,7 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
+import Logout from "@/components/common/logout";
 
 export const ADMIN_PAGES = [
     { path: '/admin/categories', name: 'Categories', icon: <Boxes className="h-5 w-5" /> },
@@ -53,7 +54,7 @@ export default async function RootLayout({
 
     const session = await getServerSession(authOptions)
 
-    if(!session?.user){
+    if (!session?.user) {
         redirect("/admin/auth")
     }
     return (
@@ -122,11 +123,10 @@ export default async function RootLayout({
                                         {page.name}
                                     </Link>
                                 ))}
-
                             </nav>
                         </SheetContent>
                     </Sheet>
-                                <h2 className="text-lg font-bold">Admin panel</h2>
+                    <h2 className="text-lg font-bold">Admin panel</h2>
                     <div className="relative ml-auto flex-1 md:grow-0">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -142,22 +142,19 @@ export default async function RootLayout({
                                 size="icon"
                                 className="overflow-hidden rounded-full"
                             >
-                                <Image
-                                    src="/placeholder-user.jpg"
-                                    width={36}
-                                    height={36}
-                                    alt="Avatar"
-                                    className="overflow-hidden rounded-full"
-                                />
+                                <User className="w-9 h-9" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                            <DropdownMenuLabel>{session.user.email}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem>Settings</DropdownMenuItem>
                             <DropdownMenuItem>Support</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>Logout</DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <ArrowRightToLine className=""/>
+                                <Logout />
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </header>

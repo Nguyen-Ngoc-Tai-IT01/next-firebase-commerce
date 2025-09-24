@@ -23,30 +23,32 @@ export const adminLogin = async (email: string, password: string) => {
 
     return {
         email: existedAdmin.email,
-        id: existedAdmin.id
+        id: existedAdmin.id,
     }
 }
 export const authOptions: NextAuthOptions = {
-    providers:[
+    session: {
+        strategy: "jwt"
+    },
+    providers: [
         CredentialsProvider({
             credentials: {},
-            async authorize(credentials, req){
-                const {email, password} = credentials as ICreateAdminInput
+            async authorize(credentials, req) {
+                const { email, password } = credentials as ICreateAdminInput
+                const data = loginSchema.safeParse({ email, password })
 
-                const data = loginSchema.safeParse({email, password})
-
-                if(!data.success){  
+                if (!data.success) {
                     const messages = JSON.parse(data.error.message);
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    throw Error(messages.map((i:any)=>i.message).join(","))
+                    throw Error(messages.map((i: any) => i.message).join(","))
                 }
                 return adminLogin(email, password)
             }
-        }) 
+        })
     ],
-    callbacks:{}
+    callbacks: {},
 }
 
 const authHandler = NextAuth(authOptions)
 
-export {authHandler as GET, authHandler as POST}
+export { authHandler as GET, authHandler as POST }

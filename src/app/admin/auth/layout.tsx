@@ -9,7 +9,6 @@ export default async function Layout({
     children: React.ReactNode 
 }>){
     const session = await getServerSession(authOptions)
-    console.log("🚀 ~ Layout ~ session:", session)
     
         if(session?.user){
             redirect("/admin/categories")
