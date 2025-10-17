@@ -19,7 +19,7 @@ import { ICreateAdminInput } from "@/features/managers/type"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
+import { toast, Toaster } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema } from "@/features/managers/rules"
 
@@ -83,7 +83,6 @@ export default function AdminLoginForm() {
                                     </FormItem>
                                 )}
                             />
-
                             <FormField
                                 control={control}
                                 name="password"
@@ -102,7 +101,6 @@ export default function AdminLoginForm() {
                                     </FormItem>
                                 )}
                             />
-
                             <Button type="submit" className="w-full" disabled={!isValid}>
                                 Login
                             </Button>
@@ -110,6 +108,7 @@ export default function AdminLoginForm() {
                     </Card>
                 </form>
             </Form>
+			<Toaster />
         </div>
     )
 }
