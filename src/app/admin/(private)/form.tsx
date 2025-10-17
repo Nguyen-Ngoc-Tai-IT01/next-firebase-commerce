@@ -37,6 +37,7 @@ const FormProduct = ({ data, onSubmit }: IProps) => {
 	}
 	const form = useForm<ICreateProductInput>({
 		resolver: zodResolver(AddProductSchema),
+		mode: 'onChange',
 		defaultValues: {
 			name: data?.name || "",
 			slug: data?.slug || "",
