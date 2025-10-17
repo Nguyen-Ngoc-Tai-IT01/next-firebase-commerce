@@ -3,8 +3,8 @@ import React from 'react'
 import { onAddAdmin } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import FormManager from '../manager_form'
 import { ICreateAdminInput } from '@/features/managers/type'
+import EditAdminForm from '../manager_form'
 
 
 const CreateManager = () => {
@@ -25,7 +25,7 @@ const CreateManager = () => {
 	return (
 		<div >
 			<h2 className='text-lg font-bold mb-8'>Create Manager</h2>
-			<FormManager onSubmit={onSubmit} />
+			< EditAdminForm onSubmit={onSubmit} />
 		</div>
 	)
 }
