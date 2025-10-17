@@ -4,7 +4,7 @@ export interface IAdminDb {
     id?: string;
     email: string;
     password: string;
-    isActive?: boolean;
+    isActive: boolean;
     deleted_at?: string | Timestamp;
     created_at: string | Timestamp;
     updated_at: string | Timestamp;

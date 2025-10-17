@@ -10,12 +10,9 @@ import { ICreateAdminInput } from '@/features/managers/type'
 const CreateManager = () => {
 	const router = useRouter()
 
-	const onSubmit = async ({ email, password }: ICreateAdminInput) => {
+	const onSubmit = async (formData: ICreateAdminInput) => {
 		try {
-			await onAddAdmin({
-				email, password,
-				isActive: false
-			})
+			await onAddAdmin(formData)
 
 			toast.info('Add manager successfully !');
 			router.push("/admin/managers")

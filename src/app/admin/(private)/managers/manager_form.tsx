@@ -10,12 +10,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ICreateAdminInput } from "@/features/managers/type";
 
 interface IProps {
-    data: ICreateAdminInput;
-    onSubmit: (data: Partial<ICreateAdminInput>) => void;
+    data?: ICreateAdminInput;
+    onSubmit: (data: ICreateAdminInput) => Promise<void>;
 }
 
 const EditAdminForm = ({ data, onSubmit }: IProps) => {
-    const form = useForm<Partial<ICreateAdminInput>>({
+    const form = useForm<ICreateAdminInput>({
+		mode: 'onChange',
         resolver: zodResolver(editAdminSchema),
         defaultValues: {
             email: data?.email || "",
