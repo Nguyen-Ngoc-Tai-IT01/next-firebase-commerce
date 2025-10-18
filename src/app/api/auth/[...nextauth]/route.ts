@@ -15,6 +15,11 @@ export const adminLogin = async (email: string, password: string) => {
 		throw new Error('This email is not exist!')
 	}
 
+	// Đảm bảo admin có ID (tránh lỗi type 'undefined')
+	if (!existedAdmin.id) {
+        throw new Error('Admin record is corrupted or missing ID.')
+    }
+
 	const isMathPassword = await comparePassword(password, existedAdmin.password)
 	// kiem tra password
 	if (!isMathPassword) {
@@ -40,7 +45,7 @@ export const authOptions: NextAuthOptions = {
 				email: { label: "Email", type: "text" },
 				password: { label: "Password", type: "password" }
 			},
-			async authorize(credentials, req) {
+			async authorize(credentials) {
 				const { email, password } = credentials as ICreateAdminInput
 				const data = loginSchema.safeParse({ email, password })
 
