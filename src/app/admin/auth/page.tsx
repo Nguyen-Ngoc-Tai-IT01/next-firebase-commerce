@@ -22,11 +22,14 @@ import { useForm } from "react-hook-form"
 import { toast, Toaster } from "sonner"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema } from "@/features/managers/rules"
+import { z } from "zod"
 
+
+type ILoginInput = z.infer<typeof loginSchema>
 export default function AdminLoginForm() {
     const router = useRouter()
 
-    const form = useForm<ICreateAdminInput>({
+    const form = useForm<ILoginInput>({
         mode: "onBlur",
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -41,7 +44,7 @@ export default function AdminLoginForm() {
         formState: { isValid },
     } = form
 
-    const onLogin = async (data: ICreateAdminInput) => {
+    const onLogin = async (data: ILoginInput) => {
         console.log("🚀 ~ onLogin ~ res?.error:", data)
         try {
             const res = await signIn("credentials", {
