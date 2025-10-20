@@ -31,3 +31,5 @@ export const AddProductSchema = z.object({
 
 	defaultPrice: z.number().optional()
 });
+
+export const EditProductSchema = AddProductSchema.partial();

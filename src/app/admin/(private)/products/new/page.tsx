@@ -3,7 +3,7 @@ import React from 'react'
 import { ICreateProductInput } from '@/features/products/type'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import FormProduct from '../../form'
+import FormProduct from '../form'
 import { onAddProduct } from '../action'
 
 

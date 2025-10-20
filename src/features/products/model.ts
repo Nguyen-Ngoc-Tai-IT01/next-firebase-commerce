@@ -21,7 +21,7 @@ import { formatZodMessage } from "@/utils/common/zod"
 import { IGetDataInput, IPaginationRes } from "../type"
 import { getLastVisibleDoc } from "@/utils/common/queries"
 import { ICreateProductInput, IProductDb, IProductDoc } from "./type"
-import { AddProductSchema } from "./rules"
+import { AddProductSchema, EditProductSchema } from "./rules"
 import { COLLECTION } from "@/constants/common"
 import { getManagerById } from "../managers/model"
 import { getCategoryByIds } from "../categories/model"
@@ -57,13 +57,14 @@ export const addProduct = async (
 	if (existedProduct) {
 		throw Error("Slug have been used!")
 	}
-	const {createdId, categoryIds, 	...restData} = data
+	const { createdId, categoryIds, ...restData } = data
 	const created_by = await getManagerById(createdId)
 	const categories = await getCategoryByIds(categoryIds)
 	const newProductRef = await addDoc(productsRef, {
 		...restData,
 		created_by: created_by,
 		categories: categories,
+		categoryIds: categories.map((c) => c.id),
 		nameLower: data.name.toLowerCase(),
 		deleted_at: "",
 		created_at: Timestamp.now(),
@@ -79,24 +80,35 @@ export const editProduct = async (
 	id: string,
 	data: ICreateProductInput
 ): Promise<IProductDb> => {
-	const test = AddProductSchema.safeParse(data)
+	const test = EditProductSchema.safeParse(data)
 	if (!test.success) {
 		const message = formatZodMessage(test.error)
 		throw Error(message)
 	}
 
-	const oldProduct = await getDoc(doc(productsRef, id))
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	if (oldProduct.exists() && data.slug !== (oldProduct.data() as any)?.slug) {
-		const existedProduct = await getProductBySlug(data.slug)
-		if (existedProduct) {
-			throw Error("Slug have been used!")
-		}
+	// Chỉ cần lấy 1 lần
+    const oldProductDoc = await getDoc(doc(productsRef, id))
+    if (!oldProductDoc.exists()) {
+        throw Error("Product not found!")
+    }
 
-	}
+	const oldProductData = oldProductDoc.data() as IProductDoc;
+
+    // Logic kiểm tra slug (chỉ chạy NẾU slug được cung cấp và nó khác)
+    if (data.slug && data.slug !== oldProductData.slug) {
+        const existedProduct = await getProductBySlug(data.slug)
+        if (existedProduct) {
+            throw Error("Slug have been used!")
+        }
+    }
+
+	const categories = await getCategoryByIds(data.categoryIds)
+
 
 	await updateDoc(doc(productsRef, id), {
 		...data,
+		categories: categories,
+		categoryIds: categories.map((c) => c.id),
 		nameLower: data.name.toLowerCase(),
 		updated_at: Timestamp.now(),
 	})
@@ -111,7 +123,7 @@ export const getProductById = async (id: string) => {
 		doc(productsRef, id)
 	)
 
-	if (!existedProduct) {
+	if (!existedProduct.exists()) {
 		return undefined
 	}
 	const Product = existedProduct.data() as IProductDoc
@@ -122,54 +134,68 @@ export const getProductById = async (id: string) => {
 }
 
 export const getProducts = async (
-	data: IGetDataInput
+    data: IGetDataInput & { categoryIds?: string[] }
 ): Promise<IPaginationRes<IProductDb>> => {
-	const { keyword, page = 1, size = 5, orderField = "nameLower", orderType = "asc" } = data
+    const { page = 1, size = 5, orderField = "nameLower", orderType = "asc" } = data;
 
-	// Base query
-	let q = query(productsRef, orderBy(orderField, orderType as "asc" | "desc"))
+    // 4. Lọc ra các categoryId rỗng (ví dụ: [''])
+    const validCategoryIds = data.categoryIds?.filter(id => id); // Lọc bỏ chuỗi rỗng
+    const keyword = data.keyword?.toLowerCase();
 
-	// Search keyword (nếu có)
-	if (keyword) {
-		q = query(
-			productsRef,
-			orderBy("nameLower"),
-			startAt(keyword.toLowerCase()),
-			endAt(keyword.toLowerCase() + "\uf8ff")
-		)
-	}
+    // 3. KIỂM TRA LỖI FIRESTORE CƠ BẢN
+    if (keyword && validCategoryIds && validCategoryIds.length > 0) {
+        throw new Error("Firestore does not support searching (keyword) and filtering (category) at the same time.");
+    }
 
-	// Nếu page > 1 thì tính toán lastDoc
-	if (page > 1) {
-		const lastDoc = await getLastVisibleDoc(productsRef, page, size, orderField, orderType)
-		if (lastDoc) {
-			q = query(q, startAfter(lastDoc))
-		}
-	}
+    let q = query(productsRef); // Bắt đầu với query gốc
+    let totalQuery = query(productsRef); // Query để đếm tổng
 
-	// Giới hạn số lượng
-	q = query(q, limit(size))
+    if (validCategoryIds && validCategoryIds.length > 0) {
+        q = query(q, where('categoryIds', 'array-contains-any', validCategoryIds));
+        totalQuery = query(totalQuery, where('categoryIds', 'array-contains-any', validCategoryIds));
+    }
 
-	// Lấy dữ liệu
-	const productsDocsRef = await getDocs(q)
-	const products = productsDocsRef.docs.map((d) => ({
-		...(d.data() as IProductDoc),
-		id: d.id,
-	}))
+    if (keyword) {
+        const orderByClause = orderBy("nameLower");
+        q = query(q, orderByClause, startAt(keyword), endAt(keyword + "\uf8ff"));
+        totalQuery = query(totalQuery, orderByClause, startAt(keyword), endAt(keyword + "\uf8ff"));
+    } else {
+        // Chỉ orderBy nếu không tìm kiếm bằng keyword
+        q = query(q, orderBy(orderField, orderType as "asc" | "desc"));
+    }
 
-	// Lấy tổng
-	const total = await getCountFromServer(productsRef)
+    //  Đếm dựa trên query đã lọc
+    const totalSnapshot = await getCountFromServer(totalQuery);
+    const total = totalSnapshot.data().count;
 
-	return {
-		meta: {
-			total: total.data().count,
-			page,
-			size,
-		},
-		data: products,
-	}
+    //  Xây dựng điều kiện phân trang 
+    // Chỉ áp dụng cho query lấy data (q)
+    if (page > 1) {
+        // getLastVisibleDoc CŨNG phải bao gồm các điều kiện 'where'
+        const lastDoc = await getLastVisibleDoc(totalQuery, page, size, orderField, orderType);
+        if (lastDoc) {
+            q = query(q, startAfter(lastDoc));
+        }
+    }
+
+    q = query(q, limit(size));
+
+    // Lấy dữ liệu
+    const productsDocsRef = await getDocs(q);
+    const products = productsDocsRef.docs.map((d) => ({
+        ...(d.data() as IProductDoc),
+        id: d.id,
+    }));
+
+    return {
+        meta: {
+            total: total, // 2. Trả về tổng đã được lọc
+            page,
+            size,
+        },
+        data: products,
+    };
 }
-
 
 export const deleteProductById = (id: string) => {
 	return deleteDoc(doc(productsRef, id))

@@ -44,7 +44,7 @@ const ProductTable = ({ data }: IProps) => {
 						<TableCell>{(product.updated_at as Timestamp).toDate().toLocaleDateString("vi-VN")}</TableCell>
 						<TableCell>
 							<div className='flex gap-4'>
-								<Link href={"/admin/categories/edit/" + product.id}>
+								<Link href={"/admin/products/edit/" + product.id}>
 									<Pencil className='w-5 h-5' />
 								</Link>
 								<TableDeleteAction id={product.id} deleteProductById={deleteProductAction} />

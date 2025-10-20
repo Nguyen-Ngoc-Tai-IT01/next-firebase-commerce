@@ -111,7 +111,7 @@ export const getManagerById = async (id: string) => {
 		doc(adminRef, id)
 	)
 
-	if (!existedManager) {
+	if (!existedManager.exists()) {
 		return undefined
 	}
 	const manager = existedManager.data() as IAdminDb
@@ -141,27 +141,33 @@ const managersRef: CollectionReference<IAdminDb> =
 export const getManagers = async (
 	data: IGetDataInput
 ): Promise<IPaginationRes<IAdminDb>> => {
-	const { keyword, page = 1, size = 5, orderField = "nameLower", orderType = "asc" } = data
+	const { keyword, page = 1, size = 5, orderField = "Email", orderType = "asc" } = data
 
-	// Base query
-	let q = query(managersRef, orderBy(orderField, orderType as "asc" | "desc"))
-
+	let q = query(managersRef); // Query lấy data
+    let totalQuery = query(managersRef); // Query để đếm tổng
 	// Search keyword (nếu có)
 	if (keyword) {
-		q = query(
-			managersRef,
-			orderBy("email"),
-			startAt(keyword.toLowerCase()),
-			endAt(keyword.toLowerCase() + "\uf8ff")
-		)
+		const normalizedKeyword = keyword.toLowerCase(); // Chuẩn hóa keyword
+        const orderByClause = orderBy("email"); // Tìm kiếm dựa trên email
+        
+        // Áp dụng cho query lấy data
+        q = query(q, orderByClause, startAt(normalizedKeyword), endAt(normalizedKeyword + "\uf8ff"));
+        // Áp dụng cho query đếm tổng
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        totalQuery = query(totalQuery, orderByClause, startAt(normalizedKeyword), endAt(normalizedKeyword + "\uf8ff"));
+	}else{
+		q = query(q, orderBy(orderField, orderType as "asc" | "desc"));
 	}
+
+	const totalSnapshot = await getCountFromServer(totalQuery);
+    const total = totalSnapshot.data().count;
 
 	// Nếu page > 1 thì tính toán lastDoc
 	if (page > 1) {
-		const lastDoc = await getLastVisibleDoc(managersRef, page, size, orderField, orderType)
-		if (lastDoc) {
-			q = query(q, startAfter(lastDoc))
-		}
+		const lastDoc = await getLastVisibleDoc(totalQuery, page, size, orderField, orderType); 
+        if (lastDoc) {
+            q = query(q, startAfter(lastDoc));
+        }
 	}
 
 	// Giới hạn số lượng
@@ -170,16 +176,13 @@ export const getManagers = async (
 	// Lấy dữ liệu
 	const managersDocsRef = await getDocs(q)
 	const managers = managersDocsRef.docs.map((d) => ({
-		...d.data(),
+		...(d.data() as IAdminDb),
 		id: d.id,
 	}))
 
-	// Lấy tổng
-	const total = await getCountFromServer(adminRef)
-
 	return {
 		meta: {
-			total: total.data().count,
+			total: total,
 			page,
 			size,
 		},
