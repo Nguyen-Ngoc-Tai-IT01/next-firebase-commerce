@@ -153,7 +153,6 @@ export const getManagers = async (
         // Áp dụng cho query lấy data
         q = query(q, orderByClause, startAt(normalizedKeyword), endAt(normalizedKeyword + "\uf8ff"));
         // Áp dụng cho query đếm tổng
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         totalQuery = query(totalQuery, orderByClause, startAt(normalizedKeyword), endAt(normalizedKeyword + "\uf8ff"));
 	}else{
 		q = query(q, orderBy(orderField, orderType as "asc" | "desc"));
