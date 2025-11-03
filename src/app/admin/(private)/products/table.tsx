@@ -33,7 +33,7 @@ const ProductTable = ({ data }: IProps) => {
 					<TableRow key={product.id}>
 						<TableCell className="font-medium">{product.name}</TableCell>
 						<TableCell>{product.slug}</TableCell>
-						<TableCell>{product.created_by.email}</TableCell>
+						<TableCell>{product.created_by?.email}</TableCell>
 						<TableCell>
 							<div className='flex gap-2'>
 								{product.categories.map(c => <Badge key={c.id}>{c.name}</Badge>)}

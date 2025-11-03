@@ -23,7 +23,7 @@ import { getLastVisibleDoc } from "@/utils/common/queries"
 import { ICreateProductInput, IProductDb, IProductDoc } from "./type"
 import { AddProductSchema, EditProductSchema } from "./rules"
 import { COLLECTION } from "@/constants/common"
-import { getManagerById } from "../managers/model"
+import {  getManagerById } from "../managers/model"
 import { getCategoryByIds } from "../categories/model"
 
 const productsRef = collection(db, COLLECTION.PRODUCT)
@@ -87,20 +87,20 @@ export const editProduct = async (
 	}
 
 	// Chỉ cần lấy 1 lần
-    const oldProductDoc = await getDoc(doc(productsRef, id))
-    if (!oldProductDoc.exists()) {
-        throw Error("Product not found!")
-    }
+	const oldProductDoc = await getDoc(doc(productsRef, id))
+	if (!oldProductDoc.exists()) {
+		throw Error("Product not found!")
+	}
 
 	const oldProductData = oldProductDoc.data() as IProductDoc;
 
-    // Logic kiểm tra slug (chỉ chạy NẾU slug được cung cấp và nó khác)
-    if (data.slug && data.slug !== oldProductData.slug) {
-        const existedProduct = await getProductBySlug(data.slug)
-        if (existedProduct) {
-            throw Error("Slug have been used!")
-        }
-    }
+	// Logic kiểm tra slug (chỉ chạy NẾU slug được cung cấp và nó khác)
+	if (data.slug && data.slug !== oldProductData.slug) {
+		const existedProduct = await getProductBySlug(data.slug)
+		if (existedProduct) {
+			throw Error("Slug have been used!")
+		}
+	}
 
 	const categories = await getCategoryByIds(data.categoryIds)
 
@@ -134,70 +134,69 @@ export const getProductById = async (id: string) => {
 }
 
 export const getProducts = async (
-    data: IGetDataInput & { categoryIds?: string[] }
+	data: IGetDataInput & { categoryIds?: string[] }
 ): Promise<IPaginationRes<IProductDb>> => {
-    const { page = 1, size = 5, orderField = "nameLower", orderType = "asc" } = data;
+	const { page = 1, size = 5, orderField = "nameLower", orderType = "asc" } = data;
 
-    // 4. Lọc ra các categoryId rỗng (ví dụ: [''])
-    const validCategoryIds = data.categoryIds?.filter(id => id); // Lọc bỏ chuỗi rỗng
-    const keyword = data.keyword?.toLowerCase();
+	// 4. Lọc ra các categoryId rỗng (ví dụ: [''])
+	const validCategoryIds = data.categoryIds?.filter(id => id); // Lọc bỏ chuỗi rỗng
+	const keyword = data.keyword?.toLowerCase();
 
-    // 3. KIỂM TRA LỖI FIRESTORE CƠ BẢN
-    if (keyword && validCategoryIds && validCategoryIds.length > 0) {
-        throw new Error("Firestore does not support searching (keyword) and filtering (category) at the same time.");
-    }
+	// 3. KIỂM TRA LỖI FIRESTORE CƠ BẢN
+	if (keyword && validCategoryIds && validCategoryIds.length > 0) {
+		throw new Error("Firestore does not support searching (keyword) and filtering (category) at the same time.");
+	}
 
-    let q = query(productsRef); // Bắt đầu với query gốc
-    let totalQuery = query(productsRef); // Query để đếm tổng
+	let q = query(productsRef); // Bắt đầu với query gốc
+	let totalQuery = query(productsRef); // Query để đếm tổng
 
-    if (validCategoryIds && validCategoryIds.length > 0) {
-        q = query(q, where('categoryIds', 'array-contains-any', validCategoryIds));
-        totalQuery = query(totalQuery, where('categoryIds', 'array-contains-any', validCategoryIds));
-    }
+	if (validCategoryIds && validCategoryIds.length > 0) {
+		q = query(q, where('categoryIds', 'array-contains-any', validCategoryIds));
+		totalQuery = query(totalQuery, where('categoryIds', 'array-contains-any', validCategoryIds));
+	}
 
-    if (keyword) {
-        const orderByClause = orderBy("nameLower");
-        q = query(q, orderByClause, startAt(keyword), endAt(keyword + "\uf8ff"));
-        totalQuery = query(totalQuery, orderByClause, startAt(keyword), endAt(keyword + "\uf8ff"));
-    } else {
-        // Chỉ orderBy nếu không tìm kiếm bằng keyword
-        q = query(q, orderBy(orderField, orderType as "asc" | "desc"));
-    }
+	if (keyword) {
+		const orderByClause = orderBy("nameLower");
+		q = query(q, orderByClause, startAt(keyword), endAt(keyword + "\uf8ff"));
+		totalQuery = query(totalQuery, orderByClause, startAt(keyword), endAt(keyword + "\uf8ff"));
+	} else {
+		// Chỉ orderBy nếu không tìm kiếm bằng keyword
+		q = query(q, orderBy(orderField, orderType as "asc" | "desc"));
+	}
 
-    //  Đếm dựa trên query đã lọc
-    const totalSnapshot = await getCountFromServer(totalQuery);
-    const total = totalSnapshot.data().count;
+	//  Đếm dựa trên query đã lọc
+	const totalSnapshot = await getCountFromServer(totalQuery);
+	const total = totalSnapshot.data().count;
 
-    //  Xây dựng điều kiện phân trang 
-    // Chỉ áp dụng cho query lấy data (q)
-    if (page > 1) {
-        // getLastVisibleDoc CŨNG phải bao gồm các điều kiện 'where'
-        const lastDoc = await getLastVisibleDoc(totalQuery, page, size, orderField, orderType);
-        if (lastDoc) {
-            q = query(q, startAfter(lastDoc));
-        }
-    }
+	//  Xây dựng điều kiện phân trang 
+	// Chỉ áp dụng cho query lấy data (q)
+	if (page > 1) {
+		// getLastVisibleDoc CŨNG phải bao gồm các điều kiện 'where'
+		const lastDoc = await getLastVisibleDoc(totalQuery, page, size, orderField, orderType);
+		if (lastDoc) {
+			q = query(q, startAfter(lastDoc));
+		}
+	}
 
-    q = query(q, limit(size));
+	q = query(q, limit(size));
 
-    // Lấy dữ liệu
-    const productsDocsRef = await getDocs(q);
-    const products = productsDocsRef.docs.map((d) => ({
-        ...(d.data() as IProductDoc),
-        id: d.id,
-    }));
+	// Lấy dữ liệu
+	const productsDocsRef = await getDocs(q);
+	const products = productsDocsRef.docs.map((d) => ({
+		...(d.data() as IProductDoc),
+		id: d.id,
+	}));
 
-    return {
-        meta: {
-            total: total, // 2. Trả về tổng đã được lọc
-            page,
-            size,
-        },
-        data: products,
-    };
+	return {
+		meta: {
+			total: total, // 2. Trả về tổng đã được lọc
+			page,
+			size,
+		},
+		data: products,
+	};
 }
 
 export const deleteProductById = (id: string) => {
 	return deleteDoc(doc(productsRef, id))
 }
-

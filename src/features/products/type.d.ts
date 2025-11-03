@@ -2,6 +2,12 @@ import { ICategoryDb } from "../categories/type"
 import { IAdminDb } from "../managers/type"
 import { IDocDb } from "../type"
 
+export interface IProperties{
+	name: string
+	color?: string
+	size?: string
+	price: string
+}
 export interface ICreateProductInput {
 	name: string,
 	slug: string,

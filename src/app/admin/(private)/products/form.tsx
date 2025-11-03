@@ -5,8 +5,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
-import { ICreateProductInput } from '@/features/products/type'
-import { AddProductSchema } from '@/features/products/rules'
+import { AddProductFormSchema } from '@/features/products/rules'
 import { IPaginationRes } from '@/features/type'
 import { ICategoryDb } from '@/features/categories/type'
 import Upload from './upload'
@@ -16,14 +15,14 @@ import debounce from 'lodash-es/debounce'
 import unionBy from 'lodash-es/unionBy'
 import MultiSelectFormField from '@/components/ui/multi_select'
 import PropertiesField from './properties_field'
+import { z } from 'zod'
 
-
-
+type IProductFormInput = z.infer<typeof AddProductFormSchema>;
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 interface IProps {
-	data?: ICreateProductInput,
-	onSubmit: (data: ICreateProductInput) => void
+    data?: IProductFormInput, // Sửa kiểu
+    onSubmit: (data: IProductFormInput) => void // Sửa kiểu
 }
 const FormProduct = ({ data, onSubmit }: IProps) => {
 	console.log('Data prop received in FormProduct:', data);
@@ -43,7 +42,6 @@ const FormProduct = ({ data, onSubmit }: IProps) => {
 		fetchCategories("")
 	}, [fetchCategories])
 
-	// Dùng useMemo để đảm bảo hàm này chỉ được tạo 1 LẦN
 	const debounceSearch = useMemo(() => {
 		return debounce((keyword: string) => {
 			fetchCategories(keyword)
@@ -51,7 +49,6 @@ const FormProduct = ({ data, onSubmit }: IProps) => {
 	}, [fetchCategories])
 
 
-	// Hủy debounce khi component bị unmount
 	useEffect(() => {
 		return () => {
 			debounceSearch.cancel()
@@ -60,20 +57,19 @@ const FormProduct = ({ data, onSubmit }: IProps) => {
 
 
 
-	const form = useForm<ICreateProductInput>({
-		resolver: zodResolver(AddProductSchema),
-		mode: 'onChange',
-		defaultValues: {
-			name: data?.name || "",
-			slug: data?.slug || "",
-			description: data?.description || "",
-			images: data?.images || [],  // đảm bảo là string[]
-			defaultPrice: data?.defaultPrice || 0,
-			categoryIds: data?.categoryIds || [],
-			createdId: data?.createdId || "", // chỉ lưu ID string, không phải object
-			properties: data?.properties || [],
-		}
-	})
+	const form = useForm<IProductFormInput>({ 
+        resolver: zodResolver(AddProductFormSchema), // Dùng schema MỚI
+        mode: 'onChange',
+        defaultValues: {
+            name: data?.name || "",
+            slug: data?.slug || "",
+            description: data?.description || "",
+            images: data?.images || [],
+            defaultPrice: data?.defaultPrice || 0,
+            categoryIds: data?.categoryIds || [],
+            properties: data?.properties || [],
+        }
+    })
 
 	useEffect(() => {
 		fetchCategories("");
@@ -113,6 +109,7 @@ const FormProduct = ({ data, onSubmit }: IProps) => {
 							</FormItem>
 						)}
 					/>
+					
 					<FormField
 						control={form.control}
 						name="description"
